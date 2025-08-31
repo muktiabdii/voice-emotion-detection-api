@@ -35,9 +35,9 @@ label_mapping = {
 @app.on_event("startup")
 def load_model():
     global model, feature_extractor
-    torch.set_num_threads(1)  # Hemat CPU thread
-    feature_extractor = AutoFeatureExtractor.from_pretrained(MODEL_NAME)
-    model = AutoModelForAudioClassification.from_pretrained(MODEL_NAME)
+    torch.set_num_threads(1)  # hemat CPU
+    feature_extractor = AutoFeatureExtractor.from_pretrained(MODEL_NAME, cache_dir="./models")
+    model = AutoModelForAudioClassification.from_pretrained(MODEL_NAME, cache_dir="./models")
 
 # === Predict Endpoint ===
 @app.post("/predict/")
@@ -46,12 +46,12 @@ async def predict_emotion(file: UploadFile = File(...), background_tasks: Backgr
     if not file.filename.endswith(".wav"):
         raise HTTPException(status_code=400, detail="File harus berformat .wav")
 
-    # Simpan file sementara dengan nama unik
+    # Simpan file sementara
     with NamedTemporaryFile(delete=False, suffix=".wav") as temp_file:
         temp_file.write(await file.read())
         temp_path = temp_file.name
 
-    # Hapus file di background setelah selesai
+    # Jadwalkan penghapusan file
     if background_tasks:
         background_tasks.add_task(os.remove, temp_path)
 
